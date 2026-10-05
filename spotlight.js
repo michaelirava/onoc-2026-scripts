@@ -1,9 +1,10 @@
-/*! ONOC spotlight v1.0.0
+/*! ONOC spotlight v1.0.1
  * PLACEMENT: before </body>.
  * HOOKS (class names from the comp; build the slides with a Collection List, Featured + sort order):
  *   .spot                      carousel root
  *   .slide                     one per item. Slide 1 should be in the HTML with a real src (LCP);
  *                              later slides may use data-src="<url>" and are loaded on idle.
+ *   data-pos (optional, on the slide or its img) CSS object-position from the CMS image-position field
  *   .slide_caption             the link inside each slide (made focusable only when active)
  *   .hero_controls             wrapper, hidden when there is only one slide
  *   .hero_tabs                 holder for the dashes. If it has no .hero_tab children they are
@@ -22,6 +23,10 @@
   if(!spot)return;
   var sl=[].slice.call(spot.querySelectorAll('.slide'));
   if(!sl.length)return;
+  // CMS framing and LCP: data-pos (CMS image-position) sets object-position; slide 1 loads first.
+  sl.forEach(function(s,i){var m=s.querySelector('img');if(!m)return;
+    var p=m.getAttribute('data-pos')||s.getAttribute('data-pos');if(p)m.style.objectPosition=p;
+    if(i===0){m.loading='eager';try{m.fetchPriority='high'}catch(e){}}});
   function load(s){var m=s&&s.querySelector('img[data-src]');if(m){m.src=m.dataset.src;m.removeAttribute('data-src')}}
   function loadAll(){sl.forEach(load)}
   function idle(){'requestIdleCallback' in window?requestIdleCallback(loadAll,{timeout:3000}):setTimeout(loadAll,1500)}
