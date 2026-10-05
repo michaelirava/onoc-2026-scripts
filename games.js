@@ -1,4 +1,4 @@
-/*! ONOC games v1.0.0  (Road to the Games)
+/*! ONOC games v1.0.1  (Road to the Games)
  * PLACEMENT: before </body> (home page; also safe site-wide, exits if the section is missing).
  * HOOKS (class names from the comp):
  *   .section_games        section root (gets the branded background layers)
@@ -33,7 +33,10 @@
   var q=/^(localhost|127\.0\.0\.1|.*\.webflow\.io)$/.test(location.hostname)&&new URLSearchParams(location.search).get('now');
   var off=q&&!isNaN(Date.parse(q))?Date.parse(q)-Date.now():0;
   function now(){return Date.now()+off}
-  var g=els.map(function(el,k){return{el:el,k:k,s:Date.parse(el.dataset.start),e:Date.parse(el.dataset.end)}});
+  // CMS dates arrive as "October 31, 2026" (no zone); read them as UTC midnight, matching the CMS value,
+  // so every visitor sees the same countdown. ISO strings with a time or offset are used as given.
+  function day(v){var t=Date.parse(v);if(isNaN(t)||/T\d|Z$|[+-]\d\d:?\d\d$/.test(v||''))return t;var x=new Date(t);return Date.UTC(x.getFullYear(),x.getMonth(),x.getDate())}
+  var g=els.map(function(el,k){return{el:el,k:k,s:day(el.dataset.start),e:day(el.dataset.end)}});
 
   g.forEach(function(x){
     var c1=x.el.dataset.c1,c2=x.el.dataset.c2;
