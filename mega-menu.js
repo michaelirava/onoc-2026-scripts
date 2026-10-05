@@ -1,4 +1,4 @@
-/*! ONOC mega-menu v1.0.0  (mega panels, search drop, mobile menu)
+/*! ONOC mega-menu v1.0.1  (mega panels, search drop, mobile menu)
  * PLACEMENT: before </body>. Replaces the older prototype inline script "onocmegamenu" v1.0.0:
  * do not apply both.
  * HOOKS:
@@ -44,6 +44,10 @@
     });
     m.addEventListener('mouseenter',function(){
       if(hov()){closeMegas();closeSearch();m.dataset.hov=Date.now();m.classList.add('open');b.setAttribute('aria-expanded','true')}
+    });
+    // keyboard: close the panel once focus leaves it (desktop only; the mobile menu manages its own focus)
+    m.addEventListener('focusout',function(e){
+      if(m.classList.contains('open')&&!m.contains(e.relatedTarget)&&!h.classList.contains('is-menu-open')){m.classList.remove('open');b.setAttribute('aria-expanded','false')}
     });
   });
   h.addEventListener('mouseleave',function(){if(hov())closeMegas()});
