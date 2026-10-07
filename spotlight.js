@@ -1,4 +1,4 @@
-/*! ONOC spotlight v1.0.1
+/*! ONOC spotlight v1.0.2
  * PLACEMENT: before </body>.
  * HOOKS (class names from the comp; build the slides with a Collection List, Featured + sort order):
  *   .spot                      carousel root
@@ -8,7 +8,8 @@
  *   .slide_caption             the link inside each slide (made focusable only when active)
  *   .hero_controls             wrapper, hidden when there is only one slide
  *   .hero_tabs                 holder for the dashes. If it has no .hero_tab children they are
- *                              generated: <button class="hero_tab">01<span class="hero_tab-bar"></span></button>
+ *                              generated: <button class="hero_tab"><span class="hero_tab-bar"></span></button>
+ *                              (bar only, no number; v1.0.2 / design v30g)
  *                              (label taken from the slide's .label text)
  *   #spPause (or .hero_pause)  pause/play button; aria-label flips Pause spotlight / Play spotlight
  * Classes written: slide.is-active, tab.is-active (restarts the CSS progress bar), .spot.paused
@@ -48,7 +49,6 @@
       var c=s.querySelector('.label'),b=document.createElement('button');
       b.type='button';b.className='hero_tab';
       b.setAttribute('aria-label','Show slide '+(n+1)+(c?': '+c.textContent.trim():''));
-      b.appendChild(document.createTextNode(n<9?'0'+(n+1):String(n+1)));
       var bar=document.createElement('span');bar.className='hero_tab-bar';bar.setAttribute('aria-hidden','true');
       b.appendChild(bar);box.appendChild(b);tabs.push(b);
     });
