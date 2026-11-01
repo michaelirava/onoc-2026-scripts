@@ -47,6 +47,11 @@
     ".dk .dk-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--dk-line)}" +
     ".dk .dk-item{display:grid;grid-template-columns:170px 1fr auto;gap:16px;align-items:center;margin:0;padding:16px 18px;border-bottom:1px solid var(--dk-line);cursor:pointer}" +
     ".dk .dk-item:hover,.dk .dk-item:focus-visible{background:var(--dk-mist);outline:none}.dk .dk-item.is-on{background:var(--dk-mist);box-shadow:inset 4px 0 0 var(--dk-acc)}" +
+    ".dk .dk-item.is-team{background:#E3F2FC;box-shadow:inset 6px 0 0 var(--dk-acc)}.dk .dk-item.is-team:hover,.dk .dk-item.is-team:focus-visible{background:#D2EAFA}.dk .dk-item.is-team.is-on{background:#C9E5F8}" +
+    ".dk .dk-item.is-team .dk-name,.dk .dk-card.is-team .dk-name,.dk .dk-now.is-team strong{font-weight:700}" +
+    ".dk .dk-team{display:inline-block;font-size:.75rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0068A8;margin-left:8px}" +
+    ".dk .dk-card.is-team{background:#E3F2FC;border-color:var(--dk-acc);box-shadow:inset 6px 0 0 var(--dk-acc);padding-left:22px}" +
+    ".dk .dk-now.is-team{background:#D2EAFA;box-shadow:inset 6px 0 0 var(--dk-acc);padding-left:26px}" +
     ".dk .dk-item.is-done{opacity:.6}.dk .dk-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center}" +
     ".dk .dk-btn{font:inherit;font-size:.85rem;font-weight:700;line-height:1.2;padding:9px 14px;border-radius:4px;border:1px solid var(--dk-ink);background:var(--dk-ink);color:#fff;white-space:nowrap;cursor:pointer}" +
     ".dk .dk-btn.is-ghost{background:#fff;color:var(--dk-ink)}.dk .dk-btn.is-live{background:var(--dk-red);border-color:var(--dk-red)}" +
@@ -119,7 +124,9 @@
       var s = document.createElement("script"); s.src = EMBED; s.onload = res; s.onerror = res; document.head.appendChild(s);
     });
 
-    function teamBadge(r) { return r.team ? '<span class="dk-badge is-team">' + esc(nocs.length > 1 ? r.nocs.join(" / ") : teamLabel) + '</span>' : ''; }
+    function teamName(r) { return nocs.length > 1 ? r.nocs.join(" / ") : teamLabel; }
+    function teamTag(r) { return r.team ? '<span class="dk-team">' + esc(teamName(r)) + '</span>' : ''; }
+    function teamBadge() { return ''; }
     function play(r, scroll) {
       current = r;
       var id = "ocplayer_dk" + (++n);
@@ -138,7 +145,8 @@
     function renderNow() {
       if (!current) return;
       var now = Date.now(), s = status(current, now);
-      nowEl.innerHTML = '<span class="dk-badge' + (s === "live" ? " is-live" : "") + '">' + (s === "live" ? "Live now" : s === "next" ? "Up next" : "Ended") + '</span>' + teamBadge(current) +
+      nowEl.className = "dk-now" + (current.team ? " is-team" : "");
+      nowEl.innerHTML = (current.team ? '<span class="dk-team" style="margin:0">' + esc(teamName(current)) + '</span>' : '') + '<span class="dk-badge' + (s === "live" ? " is-live" : "") + '">' + (s === "live" ? "Live now" : s === "next" ? "Up next" : "Ended") + '</span>' + teamBadge(current) +
         '<strong>' + esc(current.sport) + ': ' + esc(current.name) + '</strong>' +
         '<span class="dk-when">' + esc(dayLabel(current.a)) + ', ' + span(current) + (s === "next" ? ' · ' + until(current.a, now) : '') + '</span>';
     }
@@ -150,8 +158,8 @@
       pool = pool.slice(0, 4);
       nextEl.innerHTML = pool.length ? '<h3>Coming up for ' + esc(who) + '</h3><div class="dk-cards">' + pool.map(function (r) {
         var s = status(r, now);
-        return '<button type="button" class="dk-card" data-i="' + r.i + '"><span class="dk-in">' + (s === "live" ? "Live now" : until(r.a, now)) + '</span>' +
-          '<span class="dk-sport">' + esc(r.sport) + '</span><span>' + esc(r.name) + '</span><span class="dk-when">' + esc(dayLabel(r.a)) + ', ' + hm(r.a) + '</span>' + (r.team ? '<span>' + teamBadge(r) + '</span>' : '') + '</button>';
+        return '<button type="button" class="dk-card' + (r.team ? ' is-team' : '') + '" data-i="' + r.i + '"><span class="dk-in">' + (s === "live" ? "Live now" : until(r.a, now)) + '</span>' +
+          '<span><span class="dk-sport">' + esc(r.sport) + '</span>' + teamTag(r) + '</span><span class="dk-name">' + esc(r.name) + '</span><span class="dk-when">' + esc(dayLabel(r.a)) + ', ' + hm(r.a) + '</span></button>';
       }).join("") + '</div>' : '';
     }
     function pool() { return rows.filter(function (r) { return mode === "all" || r.focus; }); }
@@ -182,9 +190,9 @@
         var s = status(r, now), on = current === r;
         var btn = on ? '<span class="dk-badge">Now playing</span>' :
           '<span class="dk-btn' + (s === "live" ? " is-live" : s === "done" ? " is-ghost" : "") + '">' + (s === "live" ? "Watch live" : s === "next" ? "Watch" : "Replay") + '</span>';
-        return '<li class="dk-item' + (on ? " is-on" : "") + (s === "done" && !on ? " is-done" : "") + '" tabindex="0" role="button" aria-label="' + esc(r.sport + ", " + r.name + ", " + span(r)) + '" data-i="' + r.i + '">' +
+        return '<li class="dk-item' + (r.team ? " is-team" : "") + (on ? " is-on" : "") + (s === "done" && !on ? " is-done" : "") + '" tabindex="0" role="button" aria-label="' + esc(r.sport + ", " + r.name + ", " + span(r)) + '" data-i="' + r.i + '">' +
           '<span class="dk-time">' + span(r) + '</span>' +
-          '<span><span class="dk-sport">' + esc(r.sport) + '</span><br>' + esc(r.name) + '</span>' +
+          '<span><span class="dk-sport">' + esc(r.sport) + '</span>' + teamTag(r) + '<br><span class="dk-name">' + esc(r.name) + '</span></span>' +
           '<span class="dk-tags">' + teamBadge(r) + btn + '</span></li>';
       }).join("") : '<li class="dk-empty">No sessions on this day for this selection.</li>';
     }
