@@ -80,3 +80,7 @@ The harness differs from the comp only by: scripts removed and replaced with `<s
 ## Live site (2020 Build) — Dakar 2026 YOG player
 
 `dakar2026-live.js` (~34 KB, data inline) is for the current oceanianoc.org site, not ONOC 2026. Loaded from the page footer custom code of the `dakar-2026-live` page via jsDelivr, pinned to a commit. Mounts into `#dakar-live` or before the first `<footer>`. Data: 170 OBS sessions from "Dakar 2026 live sessions embed codes.xlsx" (Olympic Channel Services, 28 Oct 2026). The sheet's numeric dates had day and month swapped on import (e.g. 11 Jun = 6 Nov); corrected here. Badminton session 5 and table tennis episode 2 are absent from the sheet.
+
+### v2: focus mode (FASANOC)
+
+Same file, later commit. Optional mount attributes `data-focus-sports`, `data-focus-noc`, `data-focus-label`, `data-title` open the player on one team's sports with a toggle to the full schedule, badge sessions naming the NOC code, and list focus sports with no OBS stream. Without attributes it behaves as v1. fasanoc.org.fj `/dakar-2026-live` uses it for Team Fiji (Athletics, 3x3 Basketball, Boxing, Futsal, Swimming, Triathlon; Triathlon has no OBS stream). oceanianoc.org stays pinned to 3a4f208.
