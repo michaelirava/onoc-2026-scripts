@@ -10,6 +10,8 @@
  *   data-focus-noc     three-letter code; sessions naming it get a team badge, e.g. "FIJ"
  *   data-focus-label   label for the team, e.g. "Team Fiji"
  *   data-title         page heading override
+ *   data-tz            IANA zone to show times in, e.g. "Pacific/Fiji" (default: viewer's zone)
+ *   data-tz-label      label for that zone, e.g. "Fiji time"
  * With focus set, the widget opens on the team's sports and a toggle reveals
  * the full schedule. Times are Dakar local (GMT) in the sheet and shown in the
  * viewer's own time zone. Row: [startDakar, endDakar, sport, name, slug stem]
@@ -25,25 +27,25 @@
     ".dk *{box-sizing:border-box}.dk h2{margin:0 0 4px;font-size:1.9rem;line-height:1.15}.dk-sub{margin:0 0 20px;opacity:.75}" +
     ".dk-stage{background:#000;aspect-ratio:16/9;width:100%;position:relative;border-radius:6px;overflow:hidden}" +
     ".dk-stage iframe{position:absolute;inset:0;width:100%!important;height:100%!important;border:0}" +
-    ".dk-now{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:12px 0 24px}.dk-now strong{font-size:1.1rem}" +
-    ".dk-badge{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--dk-mist);color:var(--dk-ink);white-space:nowrap}" +
+    ".dk .dk-now{display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;margin:14px 0 28px;padding:16px 20px;background:var(--dk-mist);border-radius:6px}.dk-now strong{font-size:1.1rem}" +
+    ".dk .dk-badge{display:inline-block;line-height:1.2;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:3px;background:var(--dk-mist);color:var(--dk-ink);white-space:nowrap}" +
     ".dk-badge.is-live{background:#C8102E;color:#fff}.dk-badge.is-team{background:var(--dk-acc);color:#fff}" +
-    ".dk-mode{display:inline-flex;border:1px solid var(--dk-line);border-radius:999px;padding:3px;margin-bottom:12px}" +
-    ".dk-mode button{font:inherit;font-size:.9rem;border:0;background:none;color:var(--dk-ink);padding:6px 14px;border-radius:999px;cursor:pointer}" +
+    ".dk .dk-mode{display:inline-flex;border:1px solid var(--dk-line);border-radius:999px;padding:4px;margin-bottom:16px}" +
+    ".dk .dk-mode button{font:inherit;font-size:.9rem;line-height:1.2;border:0;background:none;color:var(--dk-ink);padding:10px 18px;border-radius:999px;cursor:pointer}" +
     ".dk-mode button[aria-pressed=true]{background:var(--dk-ink);color:#fff}" +
-    ".dk-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.dk-bar select{font:inherit;padding:8px 10px;border:1px solid var(--dk-line);border-radius:4px;background:#fff;color:var(--dk-ink);min-width:0;flex:1 1 200px}" +
-    ".dk-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}" +
-    ".dk-day{font:inherit;font-size:.85rem;white-space:nowrap;border:1px solid var(--dk-line);background:#fff;color:var(--dk-ink);padding:6px 12px;border-radius:999px;cursor:pointer}" +
+    ".dk .dk-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.dk .dk-bar select{font:inherit;height:auto;line-height:1.3;padding:12px 14px;border:1px solid var(--dk-line);border-radius:4px;background:#fff;color:var(--dk-ink);min-width:0;flex:1 1 200px}" +
+    ".dk .dk-days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:12px}" +
+    ".dk .dk-day{font:inherit;font-size:.85rem;line-height:1.2;white-space:nowrap;border:1px solid var(--dk-line);background:#fff;color:var(--dk-ink);padding:10px 16px;border-radius:999px;cursor:pointer}" +
     ".dk-day[aria-pressed=true]{background:var(--dk-ink);border-color:var(--dk-ink);color:#fff}" +
     ".dk-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--dk-line)}" +
-    ".dk-item{display:grid;grid-template-columns:110px 1fr auto;gap:12px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--dk-line);cursor:pointer}" +
+    ".dk .dk-item{display:grid;grid-template-columns:130px 1fr auto;gap:16px;align-items:center;margin:0;padding:16px 18px;border-bottom:1px solid var(--dk-line);cursor:pointer}" +
     ".dk-item:hover,.dk-item:focus{background:var(--dk-mist);outline:none}.dk-item[aria-current=true]{box-shadow:inset 3px 0 0 var(--dk-acc)}" +
     ".dk-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}" +
-    ".dk-time{font-variant-numeric:tabular-nums;font-size:.9rem}.dk-sport{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;opacity:.7}" +
-    ".dk-empty{padding:16px 4px;opacity:.7}.dk-note{font-size:.8rem;opacity:.65;margin-top:14px}" +
-    "@media (max-width:600px){.dk-item{grid-template-columns:1fr auto}.dk-time{grid-column:1/-1}}";
+    ".dk-time{font-variant-numeric:tabular-nums;font-size:.9rem}.dk .dk-sport{display:inline-block;margin-bottom:4px;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;opacity:.7}" +
+    ".dk .dk-empty{padding:18px;opacity:.7}.dk-note{font-size:.8rem;opacity:.65;margin-top:14px}" +
+    "@media (max-width:600px){.dk .dk-item{grid-template-columns:1fr auto;padding:14px}.dk .dk-time{grid-column:1/-1}.dk .dk-now{padding:14px}}";
 
-  var tz; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+  var tz, tzLabel; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
   function fmt(ms, o) { try { return new Intl.DateTimeFormat("en-GB", Object.assign({ timeZone: tz }, o)).format(ms); } catch (e) { return new Date(ms).toString(); } }
   function hm(ms) { return fmt(ms, { hour: "2-digit", minute: "2-digit" }); }
   function dayKey(ms) { return fmt(ms, { year: "numeric", month: "2-digit", day: "2-digit" }); }
@@ -62,6 +64,8 @@
     var noc = (root.getAttribute("data-focus-noc") || "").trim().toUpperCase();
     var teamLabel = root.getAttribute("data-focus-label") || noc;
     var title = root.getAttribute("data-title") || "Dakar 2026 Youth Olympic Games: Watch Live";
+    var fixedTz = root.getAttribute("data-tz");
+    if (fixedTz) { try { new Intl.DateTimeFormat("en-GB", { timeZone: fixedTz }); tz = fixedTz; tzLabel = root.getAttribute("data-tz-label") || fixedTz; } catch (e) {} }
     var nocRe = noc ? new RegExp("(^|[^A-Z])" + noc + "([^A-Z]|$)") : null;
     rows.forEach(function (r) { r.team = !!(nocRe && nocRe.test(r.name)); r.focus = focusSports.indexOf(r.sport) >= 0; });
     var hasFocus = rows.some(function (r) { return r.focus; });
@@ -72,7 +76,7 @@
     root.className += " dk";
     root.innerHTML =
       '<h2>' + esc(title) + '</h2>' +
-      '<p class="dk-sub">Live coverage from Olympic Broadcasting Services, 31 October to 13 November 2026. Times shown in your local time' + (tz ? " (" + esc(tz) + ")" : "") + '.</p>' +
+      '<p class="dk-sub">Live coverage from Olympic Broadcasting Services, 31 October to 13 November 2026. ' + (tzLabel ? "All times are " + esc(tzLabel) + "." : "Times shown in your local time" + (tz ? " (" + esc(tz) + ")" : "") + ".") + '</p>' +
       '<div class="dk-stage" id="dkStage"></div>' +
       '<div class="dk-now" id="dkNow" aria-live="polite"></div>' +
       (hasFocus ? '<div class="dk-mode" role="group" aria-label="Schedule"><button type="button" data-m="focus">' + esc(teamLabel) + ' sports</button><button type="button" data-m="all">Full schedule</button></div>' : '') +
