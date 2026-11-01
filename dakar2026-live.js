@@ -1,13 +1,15 @@
 /*
  * dakar2026-live.js — Dakar 2026 Youth Olympic Games live session player.
  * Source: OBS/Olympic Channel Services embed sheet "Dakar 2026 live sessions
- * embed codes.xlsx" (V. Drille, 28 Oct 2026). Used on oceanianoc.org (pinned
- * to 3a4f208, no options) and fasanoc.org.fj (focus mode, Fiji time).
+ * embed codes.xlsx" (V. Drille, 28 Oct 2026). Used on oceanianoc.org (all sports,
+ * 17 Oceania NOCs badged) and fasanoc.org.fj (focus mode, Fiji time).
  *
  * Mount: <div id="dakar-live"></div>. If absent, inserts before the first <footer>.
  * Optional attributes on the mount:
  *   data-focus-sports  comma list of sports to show first, e.g. "Futsal,Boxing"
- *   data-focus-noc     three-letter code; sessions naming it get a team badge, e.g. "FIJ"
+ *   data-focus-noc     code(s), comma separated; sessions naming one get a badge, e.g. "FIJ"
+ *                      With codes but no data-focus-sports, the widget opens on all sports and
+ *                      puts sessions naming those teams first (used by ONOC for its 17 NOCs).
  *   data-focus-label   label for the team, e.g. "Team Fiji"
  *   data-title         page heading override
  *   data-tz            IANA zone to show times in, e.g. "Pacific/Fiji" (default: viewer's zone)
@@ -74,16 +76,20 @@
       f ? f.parentNode.insertBefore(root, f) : document.body.appendChild(root);
     }
     var focusSports = (root.getAttribute("data-focus-sports") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
-    var noc = (root.getAttribute("data-focus-noc") || "").trim().toUpperCase();
-    var teamLabel = root.getAttribute("data-focus-label") || noc;
+    var nocs = (root.getAttribute("data-focus-noc") || "").toUpperCase().split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+    var teamLabel = root.getAttribute("data-focus-label") || nocs.join(", ");
+    var nocOnly = nocs.length > 0 && !focusSports.length;
     var title = root.getAttribute("data-title") || "Dakar 2026 Youth Olympic Games: Watch Live";
     var fixedTz = root.getAttribute("data-tz");
     if (fixedTz) { try { new Intl.DateTimeFormat("en-GB", { timeZone: fixedTz }); tz = fixedTz; tzLabel = root.getAttribute("data-tz-label") || fixedTz; } catch (e) {} }
-    var nocRe = noc ? new RegExp("(^|[^A-Z])" + noc + "([^A-Z]|$)") : null;
-    rows.forEach(function (r) { r.team = !!(nocRe && nocRe.test(r.name)); r.focus = focusSports.indexOf(r.sport) >= 0; });
+    rows.forEach(function (r) {
+      r.nocs = nocs.filter(function (c) { return new RegExp("(^|[^A-Z])" + c + "([^A-Z]|$)").test(r.name); });
+      r.team = r.nocs.length > 0;
+      r.focus = nocOnly ? r.team : focusSports.indexOf(r.sport) >= 0;
+    });
     var hasFocus = rows.some(function (r) { return r.focus; });
     var missing = focusSports.filter(function (s) { return !rows.some(function (r) { return r.sport === s; }); });
-    var mode = hasFocus ? "focus" : "all", sport = "", day = null, current = null, n = 0;
+    var mode = hasFocus && !nocOnly ? "focus" : "all", sport = "", day = null, current = null, n = 0;
     var who = hasFocus ? teamLabel : "the Games";
 
     var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
@@ -97,10 +103,11 @@
       '<div class="dk-now" id="dkNow" aria-live="polite"></div>' +
       '<div class="dk-next" id="dkNext"></div>' +
       '<div class="dk-label">Schedule</div>' +
-      (hasFocus ? '<div class="dk-mode" role="group" aria-label="Which sessions to show"><button type="button" data-m="focus">' + esc(teamLabel) + ' sports</button><button type="button" data-m="all">All sports</button></div>' : '') +
+      (hasFocus ? '<div class="dk-mode" role="group" aria-label="Which sessions to show"><button type="button" data-m="focus">' + esc(teamLabel) + (nocOnly ? ' matches' : ' sports') + '</button><button type="button" data-m="all">All sports</button></div>' : '') +
       '<div class="dk-chips" id="dkChips" role="group" aria-label="Sport"></div>' +
       '<div class="dk-days" id="dkDays" role="group" aria-label="Day"></div>' +
       '<ul class="dk-list" id="dkList"></ul>' +
+      (nocOnly ? '<p class="dk-note">Only team matches name countries in the Olympic Broadcasting Services schedule. ' + esc(teamLabel) + ' athletes also compete in sessions across all sports that are not tagged by country.</p>' : '') +
       (hasFocus && missing.length ? '<p class="dk-note">No live stream is listed for ' + esc(missing.join(", ")) + ' in the Olympic Broadcasting Services schedule.</p>' : '') +
       '<p class="dk-note">Video by Olympic Broadcasting Services via Olympics.com. Sessions play here when they go live; replays depend on the rights holder.</p>';
 
@@ -112,7 +119,7 @@
       var s = document.createElement("script"); s.src = EMBED; s.onload = res; s.onerror = res; document.head.appendChild(s);
     });
 
-    function teamBadge(r) { return r.team ? '<span class="dk-badge is-team">' + esc(teamLabel) + '</span>' : ''; }
+    function teamBadge(r) { return r.team ? '<span class="dk-badge is-team">' + esc(nocs.length > 1 ? r.nocs.join(" / ") : teamLabel) + '</span>' : ''; }
     function play(r, scroll) {
       current = r;
       var id = "ocplayer_dk" + (++n);
@@ -137,7 +144,10 @@
     }
     function renderNext() {
       var now = Date.now();
-      var pool = rows.filter(function (r) { return (hasFocus ? r.focus : true) && r.b > now && r !== current; }).sort(function (x, y) { return x.a - y.a || (y.team - x.team); }).slice(0, 4);
+      var up = rows.filter(function (r) { return r.b > now && r !== current; }).sort(function (x, y) { return x.a - y.a || (y.team - x.team); });
+      var pool = hasFocus ? up.filter(function (r) { return r.focus; }) : up;
+      if (nocOnly) pool = pool.concat(up.filter(function (r) { return !r.focus; }));
+      pool = pool.slice(0, 4);
       nextEl.innerHTML = pool.length ? '<h3>Coming up for ' + esc(who) + '</h3><div class="dk-cards">' + pool.map(function (r) {
         var s = status(r, now);
         return '<button type="button" class="dk-card" data-i="' + r.i + '"><span class="dk-in">' + (s === "live" ? "Live now" : until(r.a, now)) + '</span>' +
@@ -192,6 +202,7 @@
     var m = /[#&]s=([a-z0-9-]+)/.exec(location.hash || "");
     var start = (m && rows.filter(function (r) { return r.stem === m[1]; })[0]) ||
                 first(function (r) { return r.team && status(r, now) === "live"; }) ||
+                (nocOnly ? first(function (r) { return status(r, now) === "live"; }) : null) ||
                 first(function (r) { return r.focus && status(r, now) === "live"; }) ||
                 first(function (r) { return r.focus && r.a > now; }) ||
                 first(function (r) { return status(r, now) === "live"; }) ||
