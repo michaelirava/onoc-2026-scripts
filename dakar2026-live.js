@@ -52,6 +52,11 @@
     ".dk .dk-team{display:inline-block;font-size:.75rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0068A8;margin-left:8px}" +
     ".dk .dk-card.is-team{background:#E3F2FC;border-color:var(--dk-acc);box-shadow:inset 6px 0 0 var(--dk-acc);padding-left:22px}" +
     ".dk .dk-now.is-team{background:#D2EAFA;box-shadow:inset 6px 0 0 var(--dk-acc);padding-left:26px}" +
+    ".dk .dk-wait{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;color:#fff;background:linear-gradient(135deg,#001E3C,#003366 60%,#0068A8)}" +
+    ".dk .dk-wait .dk-wl{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8}.dk .dk-wait .dk-wt{font-size:1.25rem;font-weight:700;line-height:1.3;max-width:640px}" +
+    ".dk .dk-wait .dk-wc{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}.dk .dk-wait .dk-ws{opacity:.85;font-size:.95rem}" +
+    ".dk .dk-wait .dk-btn{margin-top:6px;background:#fff;color:#001E3C;border-color:#fff}" +
+    "@media (max-width:640px){.dk .dk-wait{gap:6px;padding:16px}.dk .dk-wait .dk-wt{font-size:1rem}.dk .dk-wait .dk-wc{font-size:1.5rem}.dk .dk-wait .dk-ws{font-size:.8rem}.dk .dk-wait .dk-btn{padding:7px 12px}}" +
     ".dk .dk-item.is-done{opacity:.6}.dk .dk-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center}" +
     ".dk .dk-btn{font:inherit;font-size:.85rem;font-weight:700;line-height:1.2;padding:9px 14px;border-radius:4px;border:1px solid var(--dk-ink);background:var(--dk-ink);color:#fff;white-space:nowrap;cursor:pointer}" +
     ".dk .dk-btn.is-ghost{background:#fff;color:var(--dk-ink)}.dk .dk-btn.is-live{background:var(--dk-red);border-color:var(--dk-red)}" +
@@ -127,14 +132,28 @@
     function teamName(r) { return nocs.length > 1 ? r.nocs.join(" / ") : teamLabel; }
     function teamTag(r) { return r.team ? '<span class="dk-team">' + esc(teamName(r)) + '</span>' : ''; }
     function teamBadge() { return ''; }
-    function play(r, scroll) {
-      current = r;
+    function loadStage() {
+      var r = current, now = Date.now();
+      if (status(r, now) === "next") {
+        stage.setAttribute("data-wait", "1");
+        var oc = rows.filter(function (x) { return x.stem === "opening-ceremony" && x.b < now; })[0];
+        stage.innerHTML = '<div class="dk-wait"><span class="dk-wl">' + (r.team ? esc(teamName(r)) + ' · ' : '') + esc(r.sport) + '</span>' +
+          '<span class="dk-wt">' + esc(r.name) + '</span><span class="dk-wc">' + until(r.a, now).replace("Starts in ", "") + '</span>' +
+          '<span class="dk-ws">Starts ' + esc(dayLabel(r.a)) + ', ' + hm(r.a) + '. The stream will start here automatically.</span>' +
+          (oc && r !== oc ? '<button type="button" class="dk-btn" data-i="' + oc.i + '">Watch the Opening Ceremony</button>' : '') + '</div>';
+        return;
+      }
+      stage.removeAttribute("data-wait");
       var id = "ocplayer_dk" + (++n);
       stage.innerHTML = '<div id="' + id + '"></div>';
       ready.then(function () {
         try { new window.OLYMPIC_CHANNEL.Syndicated(r.slug, { dimensions: [950, 534], id: id }); }
         catch (e) { stage.innerHTML = '<p style="color:#fff;padding:20px">Player unavailable. <a style="color:#fff" href="https://www.olympics.com/en/dakar-2026/videos/' + r.slug + '" target="_blank" rel="noopener">Watch on Olympics.com</a></p>'; }
       });
+    }
+    function play(r, scroll) {
+      current = r;
+      loadStage();
       try { history.replaceState(null, "", "#s=" + r.stem); } catch (e) {}
       day = dayKey(r.a);
       if (sport && sport !== r.sport) sport = "";
@@ -216,7 +235,11 @@
                 first(function (r) { return status(r, now) === "live"; }) ||
                 first(function (r) { return r.a > now; }) || rows[rows.length - 1];
     play(start, false);
-    setInterval(function () { renderNow(); renderNext(); renderList(); }, 60000);
+    stage.addEventListener("click", pick);
+    setInterval(function () {
+      if (current && stage.getAttribute("data-wait")) loadStage();
+      renderNow(); renderNext(); renderList();
+    }, 30000);
   }
   document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", init) : init();
 })();
